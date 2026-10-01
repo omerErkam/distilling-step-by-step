@@ -1,26 +1,42 @@
-# Distilling Step-by-Step: Outperforming LLMs with Less Data and Smaller Models
+# Distilling Step-by-Step: Research & Analysis
 
-## Project Overview
-Deploying massive Large Language Models (LLMs) like the 540-billion parameter PaLM or GPT-4 for real-time applications creates severe bottlenecks due to prohibitive VRAM requirements, high latency, and massive compute costs[cite: 3]. Traditional solutions to this problem—standard finetuning and standard task distillation—fail because they require expensive human-annotated data or massive amounts of unlabeled data[cite: 4]. 
+## 📌 Project Overview
+This repository contains a comprehensive research review and presentation based on the paper **"Distilling Step-by-Step! Outperforming Larger Language Models with Less Training Data and Smaller Model Sizes."** 
 
-This project implements **Distilling Step-by-Step**, a novel machine learning pipeline that extracts Chain-of-Thought (CoT) rationales from LLMs to train much smaller, task-specific student models[cite: 5, 6]. By framing distillation as a multi-task learning problem (predicting both the label and the reasoning rationale), this solution achieves LLM-level intelligence on hardware as accessible as a single standard GPU or CPU, while requiring significantly less training data than standard finetuning[cite: 7, 17].
+Rather than a codebase, this project serves as a structured academic analysis of the deployment bottlenecks facing Large Language Models (LLMs) and the multi-task distillation mechanism proposed to solve them. It was prepared and presented as part of the CENG 543 Information Retrieval course.
 
-## Tech Stack & Tools
-*   **Teacher LLMs:** PaLM (540B), GPT-NeoX (20B)[cite: 9, 29].
-*   **Student Models:** T5 Pretrained Architectures (T5-Base 220M, T5-Large 770M, T5-XXL 11B)[cite: 9, 50].
-*   **Frameworks & Libraries:** Huggingface `transformers`, PyTorch[cite: 50].
-*   **Hardware / Infrastructure:** Cloud A100x16 GPU instances[cite: 50].
-*   **Evaluation Datasets:** e-SNLI, ANLI, Commonsense QA (CQA), SVAMP[cite: 9].
+## 📊 Presentation Materials
+* **[Presentation.pdf](./docs/Presentation.pdf):** The full slide deck detailing the problem definition, methodology, experimental setup, and critical analysis.
+* **[Original Paper](./docs/Distilling_Step_by_Step.pdf):** The reference research paper used for this literature review.
 
-## Methodology
-1.  **Data Curation & Few-Shot Prompting:** Unlabeled datasets are curated into Few-Shot Prompts containing triplets: Input, Rationale, and Label[cite: 6].
-2.  **Rationale Extraction:** The Teacher LLM (e.g., PaLM 540B) mimics the prompt reasoning to generate high-quality rationales and pseudo-labels for the unlabeled dataset, acting as a rich supervision source rather than a simple label generator[cite: 5, 6].
-3.  **Multi-Task Training:** The Student Model (e.g., T5) is trained simultaneously on two tasks using distinct input prefixes[cite: 7]:
-    *   `[label] + Input Text` $\rightarrow$ Target: Predicted Label
-    *   `[rationale] + Input Text` $\rightarrow$ Target: Explanatory Rationale
-4.  **Optimized Deployment:** At test time, the rationale generation head is completely discarded[cite: 7]. The model only executes the label prediction task, ensuring there is zero computational overhead during inference[cite: 7].
+## 🧠 Methodology Breakdown
+The research explores shifting the paradigm from viewing LLMs purely as label generators to viewing them as *reasoners*. The core pipeline involves:
+1. **Few-Shot Prompting:** Curating unlabeled datasets into prompts containing an Input, a Chain-of-Thought (CoT) Rationale, and a Label.
+2. **Rationale Extraction:** Using a massive Teacher LLM (e.g., 540B PaLM) to generate high-quality reasoning steps (rationales) and pseudo-labels for unlabeled data.
+3. **Multi-Task Training:** Training a small Student Model (e.g., T5) to simultaneously predict the label and generate the rationale using task prefixes (`[label]` and `[rationale]`).
+4. **Efficient Deployment:** Discarding the rationale generation head during inference, leaving a lightweight model that matches LLM performance with zero computational overhead.
 
-## Results & Evaluation
-*   **Extreme Model Compression:** A 770M parameter distilled T5 model outperformed a 540B PaLM model on the ANLI benchmark, achieving an over 700x reduction in model size[cite: 17]. On the e-SNLI benchmark, a tiny 220M model surpassed the 540B teacher[cite: 17].
-*   **Data Efficiency (Labeled):** Achieved state-of-the-art performance on e-SNLI using only 12.5% of the data, outperforming standard finetuning models trained on 100% of the dataset[cite: 13].
-*   **Data Efficiency (Unlabeled):** Matched the teacher's performance on ANLI using only 12.5% of the unlabeled data, whereas standard distillation required 100%[cite: 21].
+## 🏆 Key Findings
+* **Extreme Compression:** A 770M parameter distilled T5 model outperformed a 540B PaLM model on the ANLI benchmark, representing a >700x reduction in model size.
+* **Data Efficiency:** On the e-SNLI dataset, the distilling method used only 12.5% of the data to outperform standard finetuning models trained on 100% of the data.
+* **Unlabeled Data Maximization:** Matched teacher performance using only 12.5% of unlabeled data, whereas standard task distillation required the full dataset.
+
+## 🔍 Critical Analysis
+Based on the paper's findings, several limitations and real-world considerations were identified during the review:
+* **Prompt Dependency:** The quality of the student model is heavily reliant on carefully designed few-shot prompts to extract good rationales from the teacher.
+* **Hallucination Transfer:** If the Teacher LLM hallucinates a flawed rationale, the Student model will learn and internalize that flawed logic.
+* **Complexity Limits:** This methodology cannot distill capabilities the Teacher doesn't possess, particularly in complex planning tasks where LLMs still struggle.
+
+## 🛠️ Theoretical Implementation 
+If this architecture were to be implemented in a production environment, the proposed system design would be:
+* **Infrastructure:** Cloud A100x16 GPU instances for the initial distillation phase.
+* **Tech Stack:** PyTorch, Huggingface `transformers` for T5 model initialization, and `DeepSpeed` for memory-efficient multi-GPU training.
+* **Pipeline:** A data ingestion script to parse Teacher LLM outputs, formatting them into the required `[label]` and `[rationale]` prefix structures, followed by a multi-task training loop minimizing the weighted sum of both Cross-Entropy losses.
+
+## 📁 Repository Structure
+```text
+distilling-step-by-step-research/
+├── docs/
+│   ├── Presentation.pdf # Main slide deck
+│   └── Distilling_Step_by_Step.pdf         # Original research paper for reference
+└── README.md
